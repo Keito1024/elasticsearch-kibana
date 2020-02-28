@@ -1,0 +1,79 @@
+version: "3"
+services:
+  es1:
+    build: .
+    # image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    container_name: es1
+    hostname: es1
+    environment:
+      - node.name=es1
+      # elasticsearch7系では必須項目
+      - discovery.seed_hosts=es2,es3
+      - bootstrap.memory_lock=true
+      # ノードあたりの割り当てメモリ
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es1_data:/usr/share/elasticsearch/data/
+      - ./config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - 9200:9200
+    networks:
+      - elasticsearch
+  es2:
+    build: .
+    # image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    container_name: es2
+    hostname: es2
+    environment:
+      - node.name=es2
+      - discovery.seed_hosts=es1,es3
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es2_data:/usr/share/elasticsearch/data/
+      - ./config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    networks:
+      - elasticsearch
+  es3:
+    build: .
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    container_name: es3
+    hostname: es3
+    environment:
+      - node.name=es3
+      - discovery.seed_hosts=es1,es2
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es3_data:/usr/share/elasticsearch/data/
+      - ./config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    networks:
+      - elasticsearch
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.0
+    container_name: kibana
+    volumes:
+      - ./config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    ports:
+      - 5601:5601
+    networks:
+      - elasticsearch
+networks:
+  elasticsearch:
+    driver: bridge
+volumes:
+  es1_data:
+  es2_data:
+  es3_data:
